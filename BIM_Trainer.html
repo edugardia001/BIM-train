@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>BIM Trainer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 16px;
+}
+
+h1 {
+  font-size: 1.6rem;
+  color: #1a1a2e;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+#exam-selector {
+  background: white;
+  border-radius: 14px;
+  padding: 32px 28px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  text-align: center;
+}
+#exam-selector h2 { color: #1a1a2e; margin-bottom: 8px; font-size: 1.2rem; }
+#exam-selector p  { color: #666; font-size: 0.9rem; margin-bottom: 24px; }
+
+.exam-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.exam-btn {
+  background: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 18px 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  line-height: 1.6;
+}
+.exam-btn:hover  { background: #2d2d5e; transform: translateY(-2px); }
+.exam-btn.done   { background: #27ae60; }
+.exam-btn.active { background: #e67e22; }
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 0.8rem;
+  color: #888;
+  flex-wrap: wrap;
+}
+.legend span { display: flex; align-items: center; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+#quiz-card {
+  display: none;
+  background: white;
+  border-radius: 14px;
+  padding: 30px 28px;
+  max-width: 700px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.exam-label {
+  background: #1a1a2e;
+  color: white;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 0.82rem;
+}
+.group-label {
+  background: #eef2ff;
+  color: #3a3a8e;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 0.82rem;
+  font-weight: bold;
+}
+
+.progress-bar-wrap {
+  background: #eee;
+  border-radius: 8px;
+  height: 8px;
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: #1a1a2e;
+  border-radius: 8px;
+  transition: width 0.4s ease;
+}
+
+#question {
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: #1a1a2e;
+  margin-bottom: 22px;
+  line-height: 1.5;
+  min-height: 56px;
+}
+
+.option-btn {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 13px 16px;
+  font-size: 0.95rem;
+  text-align: left;
+  background: #f7f8fc;
+  border: 2px solid #e0e4f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+.option-btn:hover:not(:disabled) {
+  background: #eef2ff;
+  border-color: #a0aae0;
+}
+.option-btn.correct { background: #d4f7d4; border-color: #4caf50; }
+.option-btn.wrong   { background: #fdd;    border-color: #e53935; }
+.option-btn:disabled { cursor: default; }
+
+#feedback {
+  margin-top: 14px;
+  font-size: 1rem;
+  min-height: 28px;
+  font-weight: bold;
+}
+#feedback.ok  { color: #27ae60; }
+#feedback.err { color: #e53935; }
+
+.quiz-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#score-display { font-size: 0.9rem; color: #555; }
+
+#next-btn {
+  background: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 28px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#next-btn:hover { background: #2d2d5e; }
+
+#result-screen {
+  display: none;
+  background: white;
+  border-radius: 14px;
+  padding: 36px 28px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  text-align: center;
+}
+#result-screen h2 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 12px; }
+#result-details   { color: #555; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.8; }
+
+.result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.result-btns button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.result-btns button:hover { opacity: 0.85; }
+#btn-retry { background: #e67e22; color: white; }
+#btn-menu  { background: #1a1a2e; color: white; }
+</style>
+</head>
+<body>
+
+<h1>📐 BIM Lerntrainer</h1>
+
+<div id="exam-selector">
+  <h2>Wähle eine Prüfung</h2>
+  <p>6 Prüfungen · je 40 Fragen · alle Themen abgedeckt</p>
+  <div class="exam-grid" id="exam-grid"></div>
+  <div class="legend">
+    <span><span class="dot" style="background:#1a1a2e"></span>Nicht begonnen</span>
+    <span><span class="dot" style="background:#e67e22"></span>Laufend</span>
+    <span><span class="dot" style="background:#27ae60"></span>Abgeschlossen</span>
+  </div>
+</div>
+
+<div id="quiz-card">
+  <div class="quiz-header">
+    <span class="exam-label" id="exam-label"></span>
+    <span class="group-label" id="group-label"></span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar"></div>
+  </div>
+  <div id="question"></div>
+  <div id="options"></div>
+  <div id="feedback"></div>
+  <div class="quiz-footer">
+    <span id="score-display"></span>
+    <button id="next-btn" onclick="nextQuestion()">Nächste Frage →</button>
+  </div>
+</div>
+
+<div id="result-screen">
+  <h2 id="result-title"></h2>
+  <div id="result-details"></div>
+  <div class="result-btns">
+    <button id="btn-retry" onclick="retryWrong()">🔁 Fehler wiederholen</button>
+    <button id="btn-menu"  onclick="showMenu()">🏠 Menü</button>
+  </div>
+</div>
+
+<script>
+// ── Question bank ────────────────────────────────────────────────────────────
+const questions = [
+{g:"BIM Grundlagen",q:"Was ist BIM?",a:"Digitale Methode zur Planung, Ausführung und Bewirtschaftung von Bauwerken mit einem gemeinsamen Datenmodell."},
+{g:"BIM Grundlagen",q:"Was bedeutet Digitalisierung im Bauwesen?",a:"Einsatz digitaler Technologien zur effizienteren Planung, Koordination und Steuerung von Bauprojekten."},
+{g:"BIM Grundlagen",q:"Was ist ein digitales Modell?",a:"Eine virtuelle Darstellung eines Bauwerks mit geometrischen und alphanumerischen Informationen."},
+{g:"BIM Grundlagen",q:"Was bedeutet Dateninteroperabilität?",a:"Fähigkeit verschiedener Softwareprogramme, Daten miteinander auszutauschen und zu verstehen."},
+{g:"BIM Grundlagen",q:"Was ist ein Datenstandard?",a:"Regelwerk zur einheitlichen Strukturierung und Nutzung von Daten."},
+{g:"BIM Grundlagen",q:"Was bedeutet Open BIM?",a:"Nutzung offener Standards für den Datenaustausch zwischen verschiedenen Softwarelösungen."},
+{g:"BIM Modell",q:"Was bedeutet LOD?",a:"Level of Development beschreibt den Entwicklungsgrad eines Bauteils im BIM-Modell."},
+{g:"BIM Modell",q:"Was bedeutet LOI?",a:"Level of Information beschreibt den Informationsgehalt eines Bauteils."},
+{g:"BIM Modell",q:"Was bedeutet LOG?",a:"Level of Geometry beschreibt den geometrischen Detailgrad eines Bauteils."},
+{g:"BIM Modell",q:"Was bedeutet LOIN?",a:"Level of Information Need beschreibt den benötigten Informationsumfang für eine Aufgabe."},
+{g:"BIM Modell",q:"Unterschied zwischen LOD und LOI?",a:"LOD beschreibt den Entwicklungsgrad der Geometrie, LOI beschreibt den Informationsgehalt eines Bauteils."},
+{g:"BIM Modell",q:"Was bedeutet LOA?",a:"Level of Accuracy beschreibt die Genauigkeit der Modellinformationen."},
+{g:"BIM Modell",q:"Was beschreibt der Informationsgehalt eines Bauteils im BIM-Modell?",a:"Eigenschaften wie Material, Kosten, Maße oder technische Daten."},
+{g:"BIM Modell",q:"Warum ist eine einheitliche Datenstruktur im BIM-Projekt wichtig?",a:"Sie ermöglicht Datenaustausch, Auswertung und Zusammenarbeit zwischen Projektbeteiligten."},
+{g:"BIM Modell",q:"Was ist ein digitales Bauwerksmodell?",a:"Eine digitale Darstellung eines Bauwerks mit geometrischen und alphanumerischen Informationen."},
+{g:"BIM Modell",q:"Was sind alphanumerische Daten im BIM-Modell?",a:"Nicht-geometrische Informationen wie Materialien, Kosten oder technische Eigenschaften."},
+{g:"BIM Modell",q:"Warum sind strukturierte Daten im BIM-Modell wichtig?",a:"Sie ermöglichen automatisierte Auswertungen, Analysen und Simulationen."},
+{g:"BIM Modell",q:"Was ermöglicht die automatische Mengenermittlung im BIM-Modell?",a:"Bauteile mit definierten Eigenschaften und geometrischen Informationen."},
+{g:"KI im Bauwesen",q:"Was bedeutet KI-gestützte Systeme im Bauwesen?",a:"Einsatz von künstlicher Intelligenz zur Analyse, Planung und Optimierung von Bauprozessen."},
+{g:"KI im Bauwesen",q:"Beispiel für KI-Anwendung im Bauwesen?",a:"Automatische Analyse des Baufortschritts oder Baustellenüberwachung."},
+{g:"KI im Bauwesen",q:"Vorteil von KI im Bauprojekt?",a:"Schnellere Datenanalyse und bessere Entscheidungsunterstützung."},
+{g:"BIM Anwendung",q:"Welche Vorteile bietet ein CDE?",a:"Zentrale Datenverwaltung, bessere Zusammenarbeit und transparente Informationsverteilung."},
+{g:"BIM Anwendung",q:"Welche Daten können im CDE gespeichert werden?",a:"Modelle, Pläne, Dokumente, Berichte und Kommunikationsinformationen."},
+{g:"BIM Anwendung",q:"Welche Rolle spielt BIM in der Kostenplanung?",a:"BIM ermöglicht automatische Mengenermittlung und modellbasierte Kostenberechnung."},
+{g:"BIM Anwendung",q:"Was sind BIM-Anwendungsfälle?",a:"Konkrete Anwendungen von BIM wie 3D-Modellierung, Terminplanung (4D), Kostenplanung (5D) oder Kollisionsprüfung."},
+{g:"BIM Anwendung",q:"Was bedeutet Building OTS?",a:"Offene Technologieplattform zur Integration verschiedener digitaler Systeme im Bauwesen."},
+{g:"BIM Anwendung",q:"Was ist AVA im Bauwesen?",a:"Software zur Ausschreibung, Vergabe und Abrechnung von Bauleistungen."},
+{g:"BIM Anwendung",q:"Was ist BCF-Management (BCFM)?",a:"System zur Verwaltung und Nachverfolgung von BIM-Koordinationsaufgaben."},
+{g:"BIM Anwendung",q:"Was ist eine Information Delivery Specification (IDS)?",a:"Standard zur Definition und automatischen Prüfung von Informationsanforderungen an BIM-Modelle."},
+{g:"BIM Anwendung",q:"Was ist ein Project Information Model (PIM)?",a:"Informationsmodell eines Bauprojekts während Planung und Bauphase."},
+{g:"BIM Anwendung",q:"Was ist ein Asset Information Model (AIM)?",a:"Informationsmodell eines Bauwerks für Betrieb und Facility Management."},
+{g:"BIM Austausch",q:"Was ist IFC?",a:"Offenes Austauschformat für BIM-Modelldaten zwischen verschiedenen Softwareprogrammen."},
+{g:"BIM Austausch",q:"Was ist BCF?",a:"Format zur Kommunikation von Problemen, Kommentaren und Aufgaben im BIM-Modell."},
+{g:"BIM Austausch",q:"Zusammenhang IFC und BCF?",a:"IFC überträgt Modelldaten, BCF überträgt Kommunikationsinformationen zu Modellproblemen."},
+{g:"BIM Austausch",q:"Wie ergänzen sich IFC und BCF?",a:"IFC überträgt das Modell, BCF überträgt Kommentare und Koordinationsinformationen zum Modell."},
+{g:"BIM Dimensionen",q:"Was bedeutet 3D BIM?",a:"Dreidimensionale Modellierung eines Bauwerks."},
+{g:"BIM Dimensionen",q:"Was bedeutet 4D BIM?",a:"Verknüpfung des 3D-Modells mit Terminplanung."},
+{g:"BIM Dimensionen",q:"Was bedeutet 5D BIM?",a:"Verknüpfung des BIM-Modells mit Kosteninformationen."},
+{g:"BIM Prozesse",q:"Was ist ein CDE?",a:"Common Data Environment – zentrale Plattform zur Verwaltung und zum Austausch von Projektdaten."},
+{g:"BIM Prozesse",q:"Was ist AIA?",a:"Auftraggeber-Informationsanforderungen des Bauherrn."},
+{g:"BIM Prozesse",q:"Was ist BAP?",a:"BIM-Abwicklungsplan zur Organisation der BIM-Prozesse."},
+{g:"BIM Prozesse",q:"Wie hängen AIA und BAP zusammen?",a:"AIA definieren die Anforderungen des Auftraggebers, der BAP beschreibt die Umsetzung dieser Anforderungen."},
+{g:"BIM Prozesse",q:"Welche drei Kernkomponenten hat ein CDE?",a:"Dokumentenmanagementsystem, Model Viewer und Kollaborationstool."},
+{g:"BIM Prozesse",q:"Was ist ein BIM-Review?",a:"Systematische Prüfung eines BIM-Modells zur Kontrolle von Struktur, Klassifikation und Datenqualität."},
+{g:"BIM Prozesse",q:"Was bedeutet informationstechnische Prüfung im BIM-Prozess?",a:"Überprüfung der Datenstruktur, Klassifizierung und Modellinformationen."},
+{g:"BIM Prozesse",q:"Warum ist korrekte Klassifizierung von Bauteilen wichtig?",a:"Falsche Klassifizierung führt zu fehlerhaften Auswertungen wie Mengenermittlung oder Terminplanung."},
+{g:"BIM Prozesse",q:"Was bedeutet Informationsmanagement im BIM-Projekt?",a:"Strukturierte Organisation, Verwaltung und Austausch von Projektinformationen über den gesamten Lebenszyklus eines Bauwerks."},
+{g:"BIM Prozesse",q:"Warum ist Informationsmanagement im BIM-Prozess entscheidend?",a:"Es stellt sicher, dass alle Beteiligten mit aktuellen und konsistenten Informationen arbeiten."},
+{g:"BIM Prozesse",q:"Welche Rolle spielt der Informationsfluss im BIM-Projekt?",a:"Er ermöglicht koordinierte Planung, Kommunikation und Entscheidungsprozesse."},
+{g:"BIM Prozesse",q:"Warum müssen Informationen im BIM-Projekt standardisiert werden?",a:"Damit Daten zwischen verschiedenen Softwarelösungen und Projektbeteiligten austauschbar sind."},
+{g:"BIM Prozesse",q:"Welche Aufgabe hat ein CDE im BIM-Projekt?",a:"Zentrale Verwaltung und Austausch aller Projektinformationen."},
+{g:"BIM Prozesse",q:"Warum verbessert ein CDE die Zusammenarbeit?",a:"Alle Beteiligten arbeiten mit denselben aktuellen Informationen."},
+{g:"BIM Prozesse",q:"Was sind Autorensoftware im BIM-Prozess?",a:"Software zur Erstellung von BIM-Modellen wie Revit oder Archicad."},
+{g:"BIM Prozesse",q:"Was bedeutet Kollaborationsprozess im BIM?",a:"Zusammenarbeit verschiedener Projektbeteiligter über gemeinsame Datenmodelle und Plattformen."},
+{g:"BIM Prozesse",q:"Warum ist korrekte Benennung von Bauteilen im BIM-Modell wichtig?",a:"Nur korrekt benannte Bauteile können von digitalen Anwendungen automatisch ausgewertet werden."},
+{g:"Normen",q:"Was regelt DIN 19650?",a:"Informationsmanagement mit BIM über den gesamten Lebenszyklus eines Bauwerks."},
+{g:"Normen",q:"Was regelt ÖNORM A 6245?",a:"Anwendung von BIM im österreichischen Bauwesen."},
+{g:"Normen",q:"Was regelt ÖNORM B 1801?",a:"Kostenplanung und Kostenmanagement im Bauwesen."},
+{g:"Normen",q:"Warum ist DIN 19650 wichtig?",a:"Die Norm standardisiert das Informationsmanagement in BIM-Projekten."},
+{g:"Normen",q:"Warum unterscheidet DIN 19650 zwischen PIM und AIM?",a:"Sie trennt Projektinformationen von Betriebsinformationen, um eine strukturierte Datenübergabe zu ermöglichen."},
+{g:"Normen",q:"Warum sind Standards im BIM-Prozess wichtig?",a:"Sie ermöglichen einheitliche Arbeitsweisen und den Datenaustausch zwischen verschiedenen Systemen."},
+{g:"Normen",q:"Welche Organisation entwickelt viele BIM-Standards?",a:"buildingSMART."},
+{g:"Normen",q:"Welche Rolle spielt buildingSMART im BIM-Kontext?",a:"Entwicklung offener BIM-Standards wie IFC und BCF."},
+{g:"Vertragsmodelle",q:"Was ist Einzelvergabe?",a:"Der Bauherr vergibt einzelne Gewerke direkt an verschiedene Auftragnehmer."},
+{g:"Vertragsmodelle",q:"Was ist ein Einzelvertrag?",a:"Ein Vertrag zwischen Bauherr und Auftragnehmer für ein spezifisches Gewerk."},
+{g:"Vertragsmodelle",q:"Was ist ein Globalvertrag?",a:"Ein Vertrag, der mehrere Leistungen oder Gewerke in einem Gesamtvertrag bündelt."},
+{g:"Vertragsmodelle",q:"Unterschied zwischen GU und GÜ?",a:"Beim GU bleibt die Planung beim Bauherrn oder Planer, beim GÜ übernimmt der Auftragnehmer auch Planungsleistungen."},
+{g:"Vertragsmodelle",q:"Unterschied zwischen TU und GU?",a:"Beim TU übernimmt ein Unternehmen Planung und Bau vollständig, beim GU meist nur die Bauausführung."},
+{g:"Vertragsmodelle",q:"Unterschied zwischen TU und GÜ?",a:"Der TU übernimmt Planung und Bau selbst, der GÜ organisiert Planung und Bau über Subunternehmer."},
+{g:"Vertragsmodelle",q:"Vorteil eines TU-Modells?",a:"Ein zentraler Ansprechpartner und klare Verantwortlichkeiten."},
+{g:"Vertragsmodelle",q:"Nachteil eines TU-Modells?",a:"Weniger Einfluss des Bauherrn auf Planung und Ausführung."},
+{g:"Vertragsmodelle",q:"Vorteil der Einzelvergabe?",a:"Mehr Kontrolle des Bauherrn über einzelne Gewerke."},
+{g:"Vertragsmodelle",q:"Nachteil der Einzelvergabe?",a:"Hoher Koordinationsaufwand für den Bauherrn."},
+{g:"Projektorganisation",q:"Wer ist der Auftraggeber (AG)?",a:"Der Bauherr und wirtschaftlich Verantwortliche des Projekts."},
+{g:"Projektorganisation",q:"Was ist ein Auftragnehmer (AN)?",a:"Unternehmen oder Organisation, die Leistungen für den Auftraggeber erbringt."},
+{g:"Projektorganisation",q:"Was ist ein Generalunternehmer (GU)?",a:"Unternehmen, das die Bauausführung organisiert und Nachunternehmer koordiniert."},
+{g:"Projektorganisation",q:"Was ist ein Generalübernehmer (GÜ)?",a:"Unternehmen, das Planung und Bau koordiniert, aber keine Leistungen selbst ausführt."},
+{g:"Projektorganisation",q:"Was ist ein Totalunternehmer (TU)?",a:"Unternehmen, das Planung und Bau vollständig übernimmt."},
+{g:"Projektorganisation",q:"Was ist ein Totalübernehmer (TÜ)?",a:"Unternehmen, das Planung und Bau organisiert, aber keine Leistungen selbst ausführt."},
+{g:"Projektorganisation",q:"Was ist ein Fachplaner?",a:"Planer, der für einen spezifischen Fachbereich verantwortlich ist, z. B. Statik oder Haustechnik."},
+{g:"Projektorganisation",q:"Was ist ein Stakeholder?",a:"Person oder Organisation mit Interesse oder Einfluss auf das Projekt."},
+{g:"Projektorganisation",q:"Was zeigt ein Projektorganigramm?",a:"Die Struktur, Rollen und Verantwortlichkeiten der Projektbeteiligten."},
+{g:"Projektorganisation",q:"Warum ist Projektorganisation wichtig?",a:"Sie definiert klare Verantwortlichkeiten und verbessert Koordination und Kommunikation."},
+{g:"Projektorganisation",q:"Was bedeutet asymmetrische Informationsverteilung im Bauwesen?",a:"Ein Informationsungleichgewicht zwischen Auftraggeber und Auftragnehmer aufgrund unterschiedlicher Wissensstände."},
+{g:"Projektorganisation",q:"Unterschied zwischen privatem und öffentlichem Bauherrn?",a:"Ein privater Bauherr ist eine natürliche oder juristische Person ohne zwingende Vergabepflicht, während ein öffentlicher Bauherr Vergaberecht und öffentliche Ausschreibungen einhalten muss."},
+{g:"Projektorganisation",q:"Welche Rolle hat der Planer im Bauprojekt?",a:"Planung des Bauwerks sowie Erstellung von Entwürfen, Plänen und technischen Lösungen."},
+{g:"Projektorganisation",q:"Welche Aufgabe hat der Auftragnehmer?",a:"Umsetzung der vertraglich vereinbarten Bauleistungen gemäß Planung und Vertrag."},
+{g:"Projektorganisation",q:"Was sind Subunternehmer?",a:"Unternehmen, die einzelne Bauleistungen im Auftrag eines Hauptauftragnehmers ausführen."},
+{g:"Projektorganisation",q:"Warum sind klare Verantwortlichkeiten im Bauprojekt wichtig?",a:"Sie verhindern Konflikte und verbessern Koordination und Kommunikation."},
+{g:"Projektorganisation",q:"Welche Aufgabe hat das Projektmanagement im Bauwesen?",a:"Koordination von Planung, Kosten, Terminen und Qualität im Projekt."},
+{g:"Projektorganisation",q:"Warum ist Kommunikation im Bauprojekt entscheidend?",a:"Viele Beteiligte müssen Informationen austauschen und koordinieren."},
+{g:"BIM Rollen",q:"Was macht ein BIM Manager?",a:"Strategische Planung und Organisation der BIM-Implementierung im Projekt."},
+{g:"BIM Rollen",q:"Was macht ein BIM Koordinator?",a:"Koordination der Fachmodelle und Durchführung der Modellprüfung."},
+{g:"BIM Rollen",q:"Was macht ein BIM Modellierer?",a:"Erstellung und Pflege von BIM-Modellen."},
+{g:"BIM Koordination",q:"Was ist Clash Detection?",a:"Überprüfung von Modellen auf Kollisionen zwischen Bauteilen."},
+{g:"BIM Koordination",q:"Was ist ein Hard Clash?",a:"Physische Überschneidung von Bauteilen im Modell."},
+{g:"BIM Koordination",q:"Was ist ein Soft Clash?",a:"Unterschreitung notwendiger Abstände zwischen Bauteilen."},
+{g:"BIM Koordination",q:"Warum ist Koordination im BIM-Projekt wichtig?",a:"Mehrere Fachplaner arbeiten gleichzeitig am Modell und müssen ihre Daten abstimmen."},
+{g:"BIM Koordination",q:"Was bedeutet Modellkoordination?",a:"Abstimmung und Zusammenführung verschiedener Fachmodelle."},
+{g:"BIM Koordination",q:"Was sind Fachmodelle im BIM-Prozess?",a:"Modelle einzelner Fachdisziplinen wie Architektur, Tragwerk oder Haustechnik."},
+{g:"BIM Koordination",q:"Was ist ein Koordinationsmodell?",a:"Zusammengeführtes Modell verschiedener Fachmodelle zur Kollisionsprüfung."},
+{g:"Projektmanagement",q:"Was ist Projektmanagement?",a:"Planung, Steuerung und Kontrolle eines Projekts hinsichtlich Zeit, Kosten und Qualität."},
+{g:"Projektmanagement",q:"Was sind Projektziele?",a:"Festgelegte Ergebnisse, die im Projekt erreicht werden sollen."},
+{g:"Projektmanagement",q:"Was ist ein Projektlebenszyklus?",a:"Alle Phasen eines Projekts von Planung bis Nutzung."},
+{g:"Projektmanagement",q:"Warum wird BIM im Bauwesen eingesetzt?",a:"Zur besseren Planung, Koordination und Verwaltung von Bauprojekten."},
+{g:"Projektmanagement",q:"Welche Vorteile hat digitale Planung gegenüber traditioneller Planung?",a:"Höhere Transparenz, bessere Koordination und weniger Fehler."},
+{g:"Projektmanagement",q:"Warum ist Informationsmanagement im Bauwesen wichtig?",a:"Bauprojekte erzeugen große Mengen an Informationen, die strukturiert verwaltet werden müssen."},
+{g:"Projektmanagement",q:"Welche Rolle spielt Digitalisierung für die Bauindustrie?",a:"Sie verbessert Effizienz, Qualität und Zusammenarbeit im Bauprozess."},
+{g:"Projektmanagement",q:"Warum ist Modellqualität im BIM-Prozess wichtig?",a:"Nur qualitativ geprüfte Modelle ermöglichen zuverlässige Auswertungen wie Mengenermittlung oder Terminplanung."},
+{g:"Datenmanagement",q:"Was ist Datenmanagement?",a:"Organisation und Verwaltung von Daten während des gesamten Projekts."},
+{g:"Datenmanagement",q:"Was ist Informationsmanagement?",a:"Strukturierte Erfassung, Verwaltung und Nutzung von Projektinformationen."},
+{g:"BIM Lebenszyklus",q:"Was ist PIM?",a:"Project Information Model – Informationsmodell während Planung und Bau."},
+{g:"BIM Lebenszyklus",q:"Was ist AIM?",a:"Asset Information Model – Informationsmodell für Betrieb und Nutzung."},
+{g:"BIM Lebenszyklus",q:"Welche Phasen umfasst der Lebenszyklus eines Bauwerks?",a:"Planung, Bau, Betrieb und Rückbau."},
+{g:"BIM Lebenszyklus",q:"Warum ist BIM über den gesamten Lebenszyklus relevant?",a:"Informationen aus Planung und Bau werden im Betrieb weiter genutzt."},
+{g:"BIM Lebenszyklus",q:"Welche Vorteile bietet BIM im Gebäudebetrieb?",a:"Bessere Verwaltung von Anlagen, Wartung und Gebäudedaten."},
+{g:"Zukunft Digitalisierung",q:"Welche Technologien treiben die Digitalisierung im Bauwesen voran?",a:"BIM, künstliche Intelligenz, Automatisierung und digitale Plattformen."},
+{g:"Zukunft Digitalisierung",q:"Welche Rolle spielen Datenplattformen im Bauwesen?",a:"Sie verbinden verschiedene Systeme und ermöglichen gemeinsamen Zugriff auf Projektinformationen."},
+{g:"Zukunft Digitalisierung",q:"Warum wird Interoperabilität im digitalen Bauwesen wichtig?",a:"Verschiedene Softwarelösungen müssen Daten austauschen können."},
+{g:"Zukunft Digitalisierung",q:"Wie wird Interoperabilität im BIM-Prozess erreicht?",a:"Durch offene Standards wie IFC und BCF."},
+{g:"Zukunft Digitalisierung",q:"Welche Herausforderung besteht bei der Digitalisierung im Bauwesen?",a:"Integration verschiedener Systeme und Anpassung von Arbeitsprozessen."},
+{g:"Zukunft Digitalisierung",q:"Warum ist Weiterbildung für Digitalisierung im Bauwesen wichtig?",a:"Neue Technologien erfordern neue Kompetenzen und Arbeitsweisen."},
+{g:"Digitalisierung",q:"Was ist Digitalisierung?",a:"Umwandlung analoger Prozesse in digitale Prozesse."},
+{g:"Digitalisierung",q:"Was ist Automatisierung?",a:"Einsatz von Technologien zur selbstständigen Durchführung von Prozessen."},
+{g:"Digitalisierung",q:"Was ist künstliche Intelligenz (KI)?",a:"Systeme, die Aufgaben ausführen können, die normalerweise menschliche Intelligenz erfordern."},
+{g:"Digitalisierung",q:"Unterschied zwischen analogen und digitalen Daten?",a:"Analoge Daten sind kontinuierlich und können unendlich viele Zustände annehmen. Digitale Daten sind diskret und werden in binären Zuständen dargestellt."},
+{g:"Digitalisierung",q:"Was beschreibt Moore's Law?",a:"Die Rechenleistung von Computerchips verdoppelt sich etwa alle zwei Jahre bei gleichbleibenden Kosten."},
+{g:"Digitalisierung",q:"Warum beeinflusst Moore's Law die Digitalisierung?",a:"Steigende Rechenleistung ermöglicht komplexe digitale Anwendungen wie BIM, Simulationen und künstliche Intelligenz."},
+{g:"Digitalisierung",q:"Was bedeutet agile Projektabwicklung?",a:"Flexible und iterative Projektorganisation mit kontinuierlicher Anpassung und enger Zusammenarbeit."},
+{g:"Digitalisierung",q:"Was bedeutet Wasserfallmodell?",a:"Lineare Projektabwicklung mit klar definierten Phasen wie Planung, Umsetzung und Abschluss."},
+{g:"Digitalisierung",q:"Unterschied zwischen agilem Ansatz und Wasserfallmodell?",a:"Agile Methoden sind iterativ und flexibel, während das Wasserfallmodell eine lineare und feste Abfolge von Projektphasen hat."},
+{g:"Digitalisierung",q:"Warum ist Digitalisierung kein Selbstzweck?",a:"Digitale Technologien sollen messbaren Mehrwert für Planung, Bau oder Betrieb schaffen."},
+{g:"Digitalisierung",q:"Was bedeutet agile Digitalisierung im Baubetrieb?",a:"Einsatz digitaler Technologien kombiniert mit agilen Methoden zur flexiblen Organisation von Bauprojekten."},
+{g:"Digitalisierung",q:"Was beschreibt die Metastudie zur Entwicklung der KI-Leistungsfähigkeit?",a:"Studien zeigen, dass sich die Leistungsfähigkeit von KI-Systemen etwa alle 7 Monate verdoppelt."},
+{g:"Digitalisierung Bauprozesse",q:"Wie verändert Digitalisierung Bauprozesse?",a:"Durch automatisierte Abläufe, bessere Datenverfügbarkeit und effizientere Zusammenarbeit."},
+{g:"Digitalisierung Bauprozesse",q:"Welche Rolle spielen Daten im digitalen Bauwesen?",a:"Sie bilden die Grundlage für Planung, Steuerung und Optimierung von Bauprojekten."},
+{g:"Digitalisierung Bauprozesse",q:"Warum gilt das Bauwesen als informationsintensive Branche?",a:"Bauprojekte erzeugen große Mengen an technischen, organisatorischen und wirtschaftlichen Informationen."},
+{g:"Digitalisierung Bauprozesse",q:"Warum ist digitale Zusammenarbeit im Bauprojekt wichtig?",a:"Viele Beteiligte arbeiten parallel und müssen Informationen austauschen."},
+{g:"Digitalisierung Bauprozesse",q:"Welche Vorteile bietet digitale Kommunikation im Bauprojekt?",a:"Schnellere Abstimmung, bessere Transparenz und weniger Informationsverluste."},
+{g:"BIM Kosten",q:"Was ist Quantity Takeoff?",a:"Automatische oder manuelle Mengenermittlung aus einem BIM-Modell."},
+{g:"BIM Kosten",q:"Unterschied zwischen Net Side Area und Gross Side Area?",a:"Net Side Area ist Fläche ohne Öffnungen, Gross Side Area inklusive Öffnungen."},
+{g:"BIM Kosten",q:"Warum ist Mengenermittlung ein wichtiger BIM-Anwendungsfall?",a:"Sie ermöglicht automatische Kostenberechnung und Ausschreibung von Bauleistungen."},
+{g:"BIM Kosten",q:"Welche BIM-Anwendungsfälle unterstützt iTWO besonders?",a:"Mengenermittlung, Kostenplanung und Erstellung von Leistungsverzeichnissen."},
+{g:"Software Systeme",q:"Was ist ERP?",a:"Enterprise Resource Planning – System zur Steuerung von Unternehmensressourcen."},
+{g:"Software Systeme",q:"Was ist CRM?",a:"Customer Relationship Management – System zur Verwaltung von Kundenbeziehungen."},
+{g:"Software Systeme",q:"Was ist DMS?",a:"Dokumentenmanagementsystem zur Verwaltung digitaler Dokumente."},
+{g:"Software Systeme",q:"Was ist ECM?",a:"Enterprise Content Management – Verwaltung von Unternehmensinformationen."},
+{g:"Software Systeme",q:"Was ist MES?",a:"Manufacturing Execution System zur Steuerung von Produktionsprozessen."},
+{g:"Software Systeme",q:"Was ist PLM?",a:"Product Lifecycle Management – Verwaltung von Produktdaten über den Lebenszyklus."},
+{g:"Software Systeme",q:"Was ist CAD?",a:"Computer Aided Design – digitale Konstruktion von Bauteilen."},
+{g:"Software Systeme",q:"Was ist CAM?",a:"Computer Aided Manufacturing – digitale Unterstützung von Fertigungsprozessen."},
+{g:"Software Systeme",q:"Was ist HRM?",a:"Human Resource Management – System zur Verwaltung von Personal und Personalprozessen."},
+{g:"Software Systeme",q:"Was ist LMS?",a:"Learning Management System – Plattform zur Verwaltung und Durchführung digitaler Schulungen."},
+{g:"Software Systeme",q:"Was ist CMS?",a:"Content Management System – System zur Erstellung und Verwaltung digitaler Inhalte."},
+{g:"Software Systeme",q:"Welche Systeme gehören zur Kategorie People & Collaboration?",a:"CRM, DMS, ECM und Kollaborationstools."},
+{g:"Software Systeme",q:"Welche Systeme gehören zur Kategorie Wertschöpfung & Produktion?",a:"MES, PLM sowie CAD/CAM-Systeme."},
+{g:"Software Systeme",q:"Welche Systeme gehören zur Kategorie Logistik, Handel & Service?",a:"SCM, WMS und ITSM."},
+{g:"Software Systeme",q:"Welche Systeme gehören zur Kategorie Inhalte & Prozesse?",a:"BPM- und BI-Systeme."},
+{g:"BIM Software",q:"Was ist RIB iTWO?",a:"Softwareplattform für modellbasierte Mengenermittlung, Kostenplanung und Projektsteuerung im Bauwesen."},
+{g:"BIM Software",q:"Wofür wird iTWO im BIM-Kontext verwendet?",a:"Zur Verknüpfung von BIM-Modellen mit Termin- und Kostendaten."},
+{g:"BIM Software",q:"Wie unterscheidet sich modellbasierte Mengenermittlung von der klassischen Methode?",a:"Die Mengen werden automatisch aus dem Modell abgeleitet statt manuell aus Plänen berechnet."},
+{g:"Logistik Systeme",q:"Was ist SCM?",a:"Supply Chain Management – Steuerung von Lieferketten."},
+{g:"Logistik Systeme",q:"Was ist WMS?",a:"Warehouse Management System – Verwaltung von Lagerprozessen."},
+{g:"Service Systeme",q:"Was ist ITSM?",a:"IT Service Management – Organisation und Bereitstellung von IT-Dienstleistungen."},
+{g:"Analyse Systeme",q:"Was ist BI?",a:"Business Intelligence – Analyse von Daten zur Entscheidungsunterstützung."},
+{g:"Analyse Systeme",q:"Was ist BPM?",a:"Business Process Management – Modellierung und Optimierung von Geschäftsprozessen."},
+{g:"Acronym",q:"BIM",a:"Building Information Modeling"},
+{g:"Acronym",q:"LOD",a:"Level of Development"},
+{g:"Acronym",q:"LOI",a:"Level of Information"},
+{g:"Acronym",q:"LOG",a:"Level of Geometry"},
+{g:"Acronym",q:"LOA",a:"Level of Accuracy"},
+{g:"Acronym",q:"LOIN",a:"Level of Information Need"},
+{g:"Acronym",q:"IFC",a:"Industry Foundation Classes"},
+{g:"Acronym",q:"BCF",a:"BIM Collaboration Format"},
+{g:"Acronym",q:"CDE",a:"Common Data Environment"},
+{g:"Acronym",q:"AIA",a:"Auftraggeber Informationsanforderungen"},
+{g:"Acronym",q:"BAP",a:"BIM Abwicklungsplan"},
+{g:"Acronym",q:"PIM",a:"Project Information Model"},
+{g:"Acronym",q:"AIM",a:"Asset Information Model"},
+{g:"Acronym",q:"IDS",a:"Information Delivery Specification"},
+{g:"Acronym",q:"EIR",a:"Exchange Information Requirements"},
+{g:"Acronym",q:"MIDP",a:"Master Information Delivery Plan"},
+{g:"Acronym",q:"TIDP",a:"Task Information Delivery Plan"},
+{g:"Acronym",q:"IDM",a:"Information Delivery Manual"},
+{g:"Acronym",q:"BCFM",a:"BCF Management"},
+{g:"Acronym",q:"ERP",a:"Enterprise Resource Planning"},
+{g:"Acronym",q:"CRM",a:"Customer Relationship Management"},
+{g:"Acronym",q:"DMS",a:"Dokumentenmanagementsystem"},
+{g:"Acronym",q:"ECM",a:"Enterprise Content Management"},
+{g:"Acronym",q:"MES",a:"Manufacturing Execution System"},
+{g:"Acronym",q:"PLM",a:"Product Lifecycle Management"},
+{g:"Acronym",q:"CAD",a:"Computer Aided Design"},
+{g:"Acronym",q:"CAM",a:"Computer Aided Manufacturing"},
+{g:"Acronym",q:"SCM",a:"Supply Chain Management"},
+{g:"Acronym",q:"WMS",a:"Warehouse Management System"},
+{g:"Acronym",q:"ITSM",a:"IT Service Management"},
+{g:"Acronym",q:"BI",a:"Business Intelligence"},
+{g:"Acronym",q:"BPM",a:"Business Process Management"},
+{g:"Acronym",q:"GIS",a:"Geographic Information System"},
+{g:"Acronym",q:"API",a:"Application Programming Interface"},
+{g:"Acronym",q:"MEP",a:"Mechanical Electrical Plumbing"},
+{g:"Acronym",q:"QTO",a:"Quantity Take Off"},
+{g:"Acronym",q:"FM",a:"Facility Management"},
+{g:"Acronym",q:"AR",a:"Augmented Reality"},
+{g:"Acronym",q:"VR",a:"Virtual Reality"},
+{g:"Acronym",q:"IoT",a:"Internet of Things"},
+{g:"Acronym",q:"HRM",a:"Human Resource Management"},
+{g:"Acronym",q:"LMS",a:"Learning Management System"},
+{g:"Acronym",q:"CMS",a:"Content Management System"},
+{g:"Acronym",q:"3D",a:"Dreidimensionale Modellgeometrie"},
+{g:"Acronym",q:"4D",a:"Zeitplanung im BIM-Modell"},
+{g:"Acronym",q:"5D",a:"Kosteninformationen im BIM-Modell"},
+{g:"Acronym",q:"6D",a:"Nachhaltigkeit und Facility Management"},
+{g:"Acronym",q:"7D",a:"Betrieb und Lebenszyklusmanagement"},
+{g:"Acronym",q:"ISO",a:"International Organization for Standardization"},
+{g:"Acronym",q:"DIN",a:"Deutsches Institut für Normung"},
+{g:"Acronym",q:"ÖNORM",a:"Österreichisches Normungsinstitut"},
+{g:"Acronym",q:"bSI",a:"buildingSMART International"},
+{g:"Acronym",q:"AEC",a:"Architecture Engineering Construction"},
+{g:"Acronym",q:"GU",a:"Generalunternehmer"},
+{g:"Acronym",q:"GÜ",a:"Generalübernehmer"},
+{g:"Acronym",q:"TU",a:"Totalunternehmer"},
+{g:"Acronym",q:"TÜ",a:"Totalübernehmer"},
+{g:"Acronym",q:"AVA",a:"Ausschreibung Vergabe Abrechnung"},
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const EXAM_SIZE = 40;
+const NUM_EXAMS = 6;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Build 6 non-overlapping exams of 40 questions each
+function buildExams() {
+  const pool = shuffle([...questions]);
+  const exams = [];
+  for (let i = 0; i < NUM_EXAMS; i++) {
+    const start = i * EXAM_SIZE;
+    const slice = pool.slice(start, start + EXAM_SIZE);
+    // if last exam is short, pad with earlier questions
+    while (slice.length < EXAM_SIZE) slice.push(pool[slice.length % pool.length]);
+    exams.push(slice);
+  }
+  return exams;
+}
+
+// 4 options: 1 correct + 3 wrong from the SAME group when possible
+function getOptions(current) {
+  let pool = questions.filter(q => q.g === current.g && q.a !== current.a);
+  if (pool.length < 3) pool = questions.filter(q => q.a !== current.a);
+  const wrongs = shuffle(pool).slice(0, 3).map(q => q.a);
+  return shuffle([current.a, ...wrongs]);
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let exams       = buildExams();
+let examStatus  = Array(NUM_EXAMS).fill('pending');
+let examScores  = Array(NUM_EXAMS).fill(null);
+
+let currentExamIdx = -1;
+let sessionQueue   = [];
+let wrongList      = [];
+let qIdx           = 0;
+let correct        = 0;
+let total          = 0;
+let isRetryMode    = false;
+let current        = null;
+let answered       = false;
+
+// ── Menu ─────────────────────────────────────────────────────────────────────
+function showMenu() {
+  document.getElementById('exam-selector').style.display = 'block';
+  document.getElementById('quiz-card').style.display     = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('exam-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < NUM_EXAMS; i++) {
+    const btn   = document.createElement('button');
+    btn.className = 'exam-btn';
+    const emoji = examStatus[i] === 'done' ? '✅' : examStatus[i] === 'active' ? '▶️' : '📝';
+    const score = examScores[i] ? `<br><small>${examScores[i].c}/${examScores[i].t}</small>` : '';
+    btn.innerHTML = `${emoji}<br>Prüfung ${i + 1}${score}`;
+    if (examStatus[i] === 'done')   btn.classList.add('done');
+    if (examStatus[i] === 'active') btn.classList.add('active');
+    btn.onclick = () => startExam(i);
+    grid.appendChild(btn);
+  }
+}
+
+// ── Start exam ───────────────────────────────────────────────────────────────
+function startExam(idx) {
+  currentExamIdx = idx;
+  examStatus[idx] = 'active';
+  sessionQueue   = shuffle([...exams[idx]]);
+  wrongList      = [];
+  qIdx = correct = total = 0;
+  isRetryMode    = false;
+
+  document.getElementById('exam-selector').style.display = 'none';
+  document.getElementById('quiz-card').style.display     = 'block';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('exam-label').textContent      = `Prüfung ${idx + 1} / ${NUM_EXAMS}`;
+  showQuestion();
+}
+
+// ── Question display ─────────────────────────────────────────────────────────
+function showQuestion() {
+  if (qIdx >= sessionQueue.length) { showResult(); return; }
+
+  answered = false;
+  current  = sessionQueue[qIdx];
+
+  document.getElementById('progress-bar').style.width =
+    Math.round((qIdx / sessionQueue.length) * 100) + '%';
+  document.getElementById('group-label').textContent = current.g;
+  document.getElementById('question').textContent    = current.q;
+
+  const container = document.getElementById('options');
+  container.innerHTML = '';
+  getOptions(current).forEach(opt => {
+    const b = document.createElement('button');
+    b.className   = 'option-btn';
+    b.textContent = opt;
+    b.onclick = () => checkAnswer(b, opt);
+    container.appendChild(b);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.textContent = '';
+  fb.className   = '';
+
+  document.getElementById('score-display').textContent =
+    `${isRetryMode ? '🔁 Wiederholung' : 'Frage ' + (qIdx + 1) + ' / ' + sessionQueue.length}  |  Score: ${correct} / ${total}`;
+}
+
+function checkAnswer(button, answer) {
+  if (answered) return;
+  answered = true;
+  total++;
+
+  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  if (answer === current.a) {
+    button.classList.add('correct');
+    fb.textContent = '✅ Richtig!';
+    fb.className   = 'ok';
+    correct++;
+  } else {
+    button.classList.add('wrong');
+    document.querySelectorAll('.option-btn').forEach(b => {
+      if (b.textContent === current.a) b.classList.add('correct');
+    });
+    fb.innerHTML = `❌ Falsch &nbsp;·&nbsp; Richtig: <b>${current.a}</b>`;
+    fb.className = 'err';
+    wrongList.push(current);
+  }
+
+  document.getElementById('score-display').textContent =
+    `Frage ${qIdx + 1} / ${sessionQueue.length}  |  Score: ${correct} / ${total}`;
+  qIdx++;
+}
+
+function nextQuestion() {
+  if (!answered && qIdx < sessionQueue.length) return;
+  showQuestion();
+}
+
+// ── Result ───────────────────────────────────────────────────────────────────
+function showResult() {
+  document.getElementById('quiz-card').style.display     = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+
+  const pct   = Math.round((correct / total) * 100);
+  const emoji = pct >= 75 ? '🎉' : pct >= 50 ? '👍' : '📚';
+
+  examScores[currentExamIdx] = { c: correct, t: total };
+  if (!isRetryMode) examStatus[currentExamIdx] = 'done';
+
+  document.getElementById('result-title').textContent =
+    `${emoji} Prüfung ${currentExamIdx + 1} abgeschlossen`;
+
+  const wc = wrongList.length;
+  document.getElementById('result-details').innerHTML =
+    `Ergebnis: <b>${correct} / ${total}</b> (${pct}%)<br>` +
+    (wc > 0 ? `Falsch: <b>${wc}</b> Fragen – du kannst sie jetzt wiederholen.`
+            : `Keine Fehler – perfekt! 🏆`);
+
+  document.getElementById('btn-retry').style.display = wc > 0 ? 'inline-block' : 'none';
+}
+
+function retryWrong() {
+  sessionQueue = shuffle([...wrongList]);
+  wrongList    = [];
+  qIdx = correct = total = 0;
+  isRetryMode  = true;
+
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-card').style.display     = 'block';
+  document.getElementById('exam-label').textContent      = `🔁 Wiederholung – Prüfung ${currentExamIdx + 1}`;
+  showQuestion();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+showMenu();
+</script>
+</body>
+</html>
